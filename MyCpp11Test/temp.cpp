@@ -60,9 +60,21 @@ TEST(p17, copy_move)
 
 
 
-TEST(p22, make_pair)
+TEST(p22, make_pair_first_second)
 {
     auto pair = std::make_pair("pi", 3.14);
     EXPECT_TRUE(pair.first == "pi");
     EXPECT_TRUE(pair.second == 3.14);
+}
+
+
+
+TEST(p23, make_tuple_get)
+{
+    auto tuple = std::make_tuple("pi", 3, 0.14159, "hello", "world");
+    EXPECT_TRUE(std::get<0>(tuple) == "pi");
+    EXPECT_TRUE(std::get<1>(tuple) == 3);
+    EXPECT_TRUE(std::get<2>(tuple) == 0.14159);
+    EXPECT_TRUE(std::get<3>(tuple) == "hello");
+    EXPECT_TRUE(std::get<4>(tuple) == "world");
 }
