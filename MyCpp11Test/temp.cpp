@@ -78,3 +78,98 @@ TEST(p23, make_tuple_get)
     EXPECT_TRUE(std::get<3>(tuple) == "hello");
     EXPECT_TRUE(std::get<4>(tuple) == "world");
 }
+
+
+
+class MyClass
+{
+public:
+    MyClass(std::string id)
+    {
+        _id = id;
+        std::cout << "MyClass.new _id : " << _id << std::endl;
+    }
+
+    virtual ~MyClass()
+    {
+        std::cout << "MyClass.~ _id : " << _id << std::endl;
+    }
+
+    std::string _id;
+};
+
+TEST(p32, make_shared_shared_ptr)
+{
+    auto obj = std::make_shared<MyClass>("hello");
+    EXPECT_TRUE(obj.use_count() == 1);
+
+    {
+        auto obj2 = obj;
+        EXPECT_TRUE(obj.use_count() == 2);
+        EXPECT_TRUE(obj2.use_count() == 2);
+    }
+
+    EXPECT_TRUE(obj.use_count() == 1);
+
+    obj.reset();
+    EXPECT_TRUE(obj.use_count() == 0);
+
+    MyClass* pRawObj = new MyClass("world");
+    obj.reset(pRawObj);
+    EXPECT_TRUE(obj.use_count() == 1);
+}
+
+
+
+TEST(p42, chrono_duration)
+{
+    auto begin = std::chrono::high_resolution_clock::now();
+    std::vector<int> vecOrg(1000000, 1234);
+    auto vecCopy = vecOrg;
+    auto end = std::chrono::high_resolution_clock::now();
+    auto span = end - begin;
+    auto spanNanao = span.count();
+    std::cout << "spanNanao : " << spanNanao << std::endl;
+    auto spanSec = std::chrono::duration<double>(span).count();
+    std::cout << "spanSec : " << spanSec << std::endl;
+    auto spanMin = spanSec / 60;
+    std::cout << "spanMin : " << spanMin << std::endl;
+    auto spanHour = spanSec / 3660;
+    std::cout << "spanHour : " << spanHour << std::endl;
+}
+
+
+template<typename T>
+void hhdPrintVector(std::vector<T> v, std::string title)
+{
+    std::cout << title << " : { ";
+
+    for (auto item : v)
+    {
+        std::cout << item << ", ";
+    }
+
+    std::cout << "}" << std::endl;
+}
+
+template<typename T>
+void hhdPrintValue(T var, std::string title)
+{
+    std::cout << title << " : " << var << endl;
+}
+
+TEST(p48, vector)
+{
+    auto ARR = { 1, 2, 3, 4, 5 };
+    std::vector<int> v = ARR;
+    hhdPrintVector(v, "v");
+
+    auto v2 = v;
+    hhdPrintVector(v2, "v2");
+
+    std::vector<int> v3(v.begin(), v.end());
+    hhdPrintVector(v3, "v3");
+
+    std::vector<int> v4 = { 1, 2, 3, 4, 5 };
+    hhdPrintVector(v4, "v4");
+}
