@@ -90,9 +90,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="hhd_util.h" />
+    <ClInclude Include="LsPerfCounter.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="conditional_varialbe_wait.cpp" />
+    <ClCompile Include="LsPerfCounter.cpp" />
+    <ClCompile Include="LsPerfCounterTest.cpp" />
     <ClCompile Include="unordered_map_test.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="temp.cpp" />
