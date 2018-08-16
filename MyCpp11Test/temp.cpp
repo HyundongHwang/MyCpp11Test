@@ -1,8 +1,97 @@
 #include "stdafx.h"
 
 
+class MyStr
+{
+public:
+    MyStr()
+    {
+        std::cout << "MyStr create" << std::endl;
+    }
+
+    virtual ~MyStr()
+    {
+        std::cout << "MyStr dest" << std::endl;
+    }
+
+    std::string str;
+};
+
+void func_for_move(std::vector<MyStr> urlList)
+{
+    std::cout << "func_for_move start" << std::endl;
+
+    auto urlList2 = std::move(urlList);
+
+    for (auto item : urlList2)
+    {
+        hhdPrintValue(item.str, "item.str");
+    }
+
+    std::cout << "func_for_move end" << std::endl;
+}
+
+TEST(move, move)
+{
+    std::vector<MyStr> urlList;
+    {
+        MyStr ms;
+        ms.str = "hello";
+        urlList.push_back(ms);
+        ms.str = "world";
+        urlList.push_back(ms);
+    }
+    std::cout << "func_for_move call start" << std::endl;
+    func_for_move(std::move(urlList));
+    std::cout << "func_for_move call end" << std::endl;
+}
+
+
+
+std::shared_ptr<std::vector<std::string>> urlList2;
+
+void func2(std::shared_ptr<std::vector<std::string>> urlList)
+{
+    auto cnt = urlList.use_count();
+    hhdPrintValue(cnt, "func2 cnt");
+    urlList2 = urlList;
+    auto cnt2 = urlList.use_count();
+    hhdPrintValue(cnt2, "func2 cnt2");
+    auto d = 0;
+    urlList2.reset();
+}
+
+
+std::shared_ptr<std::vector<std::string>> urlList1;
+
+void func1(std::shared_ptr<std::vector<std::string>> urlList)
+{
+    auto cnt = urlList.use_count();
+    hhdPrintValue(cnt, "cnt");
+    urlList1 = urlList;
+    auto cnt2 = urlList.use_count();
+    hhdPrintValue(cnt2, "cnt2");
+    func2(urlList);
+    auto cnt3 = urlList.use_count();
+    hhdPrintValue(cnt3, "cnt3");
+    auto d = 0;
+    urlList1.reset();
+}
+
 
 TEST(test, test)
+{
+    auto urlList = std::make_shared<std::vector<std::string>>();
+    urlList->push_back("hello");
+    urlList->push_back("world");
+    func1(urlList);
+    auto cnt = urlList.use_count();
+    hhdPrintValue(cnt, "test cnt");
+}
+
+
+
+TEST(epoch_time, epoch_time)
 {
     auto now = std::chrono::system_clock::now();
     auto epoch = now.time_since_epoch().count();
