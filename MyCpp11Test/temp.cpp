@@ -1,6 +1,18 @@
 #include "stdafx.h"
 
 
+TEST(print_cur_time, print_cur_time)
+{
+    HHDLOG("HHDLOG");
+
+    std::time_t t = std::time(nullptr);
+    char mbstr[100];
+    std::strftime(mbstr, sizeof(mbstr), "%m-%d %H:%M:%S", std::localtime(&t));
+    hhdPrintValue(mbstr, "mbstr");
+}
+
+
+
 class MyStr
 {
 public:

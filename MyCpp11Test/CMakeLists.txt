@@ -36,7 +36,8 @@ ADD_EXECUTABLE( MyCpp11Test
                 test_sample.cpp
                 testf_sample.cpp
                 main.cpp
-                temp.cpp)
+                temp.cpp
+                HhdLog.cpp)
 
 TARGET_LINK_LIBRARIES(  MyCpp11Test 
                         gtest
