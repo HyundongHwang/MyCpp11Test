@@ -1,138 +1,24 @@
 #include "stdafx.h"
 
-
-
-
-
-
-
-
-
-
-
-#include <string>
-#include <thread>
-#include <mutex>
-#include <iostream>
-#include <chrono>
-#include <cstdarg>
-
-#define HHDLOG2(szFormat, ...) \
-    HhdLog2::PrintLog(__FILE__, __LINE__, __FUNCTION__, szFormat, ##__VA_ARGS__);
-
-
-class HhdLog2
-{
-public:
-    static void PrintLog(std::string strFilePath, int nLineNum, std::string strFuncName, std::string strFormat, ...);
-private:
-    static std::mutex _mtxPrint;
-};
-
-std::mutex HhdLog2::_mtxPrint;
-
-void HhdLog2::PrintLog(std::string strFilePath, int nLineNum, std::string strFuncName, std::string strFormat, ...)
-{
-    std::lock_guard<std::mutex> lg(_mtxPrint);
-
-    auto curTime = std::time(nullptr);
-    char szCurTime[1024] = {0,};
-    std::strftime(szCurTime, sizeof(szCurTime), "%m-%d %H:%M:%S", std::localtime(&curTime));
-
-    auto now = std::chrono::system_clock::now();
-    auto ms = (std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000).count();
-
-    auto tid = std::this_thread::get_id();
-
-    char szLog[1024] = { 0, };
-    va_list args;
-    va_start(args, strFormat);
-    vsprintf(szLog, strFormat.c_str(), args);
-    va_end(args);
-    char szPrettyLog[1024] = { 0, };
-
-    if (strFilePath.empty())
-    {
-        std::snprintf(
-            szPrettyLog,
-            1024,
-            "%s.%d %d D %s \n",
-            szCurTime,
-            ms,
-            tid,
-            szLog
-        );
-    }
-    else
-    {
-        auto iStart = strFilePath.find_last_of('/');
-
-        if (iStart == std::string::npos)
-        {
-            iStart = strFilePath.find_last_of('\\');
-        }
-
-        auto strFileName = strFilePath.substr(iStart + 1, strFilePath.size() - iStart - 1);
-
-        std::snprintf(
-            szPrettyLog,
-            1024,
-            "%s.%d %d D %s:%d:%s %s \n",
-            szCurTime,
-            ms,
-            tid,
-            strFileName.c_str(),
-            nLineNum,
-            strFuncName.c_str(),
-            szLog
-        );
-    }
-
-    std::cout << szPrettyLog << std::endl;
-
-    #if defined(ANDROID) || defined(__ANDROID__)
-        __android_log_write(ANDROID_LOG_DEBUG, "HHDLOG", szPrettyLog);
-    #endif
-}
-
-TEST(HHDLOG2_test, HHDLOG2_test)
-{
-    HHDLOG2("HHDLOG2");
-}
-
-
-
-
-
-
-TEST(HHDLOG_test, HHDLOG_test)
-{
-    HHDLOG("HHDLOG");
-}
-
-
-
 TEST(print_cur_time, print_cur_time)
 {
     std::time_t t = std::time(nullptr);
     char mbstr[100];
     std::strftime(mbstr, sizeof(mbstr), "%m-%d %H:%M:%S", std::localtime(&t));
-    hhdPrintValue(mbstr, "mbstr");
+    HHDLOG("mbstr[%s]", mbstr);
 }
-
-
 
 class MyStr
 {
-public:
+  public:
     MyStr()
     {
-        std::cout << "MyStr create" << std::endl;
+        HHDLOG("");
     }
 
     virtual ~MyStr()
     {
-        std::cout << "MyStr dest" << std::endl;
+        HHDLOG("");
     }
 
     std::string str;
@@ -140,16 +26,16 @@ public:
 
 void func_for_move(std::vector<MyStr> urlList)
 {
-    std::cout << "func_for_move start" << std::endl;
+    HHDLOG("start");
 
     auto urlList2 = std::move(urlList);
 
     for (auto item : urlList2)
     {
-        hhdPrintValue(item.str, "item.str");
+        HHDLOG("item[%s]", item.str.c_str());
     }
 
-    std::cout << "func_for_move end" << std::endl;
+    HHDLOG("end");
 }
 
 TEST(move, move)
@@ -162,43 +48,39 @@ TEST(move, move)
         ms.str = "world";
         urlList.push_back(ms);
     }
-    std::cout << "func_for_move call start" << std::endl;
+    HHDLOG("start");
     func_for_move(std::move(urlList));
-    std::cout << "func_for_move call end" << std::endl;
+    HHDLOG("end");
 }
-
-
 
 std::shared_ptr<std::vector<std::string>> urlList2;
 
 void func2(std::shared_ptr<std::vector<std::string>> urlList)
 {
     auto cnt = urlList.use_count();
-    hhdPrintValue(cnt, "func2 cnt");
+    HHDLOG("cnt[%d]", cnt);
     urlList2 = urlList;
     auto cnt2 = urlList.use_count();
-    hhdPrintValue(cnt2, "func2 cnt2");
+    HHDLOG("cnt2[%d]", cnt2);
     auto d = 0;
     urlList2.reset();
 }
-
 
 std::shared_ptr<std::vector<std::string>> urlList1;
 
 void func1(std::shared_ptr<std::vector<std::string>> urlList)
 {
     auto cnt = urlList.use_count();
-    hhdPrintValue(cnt, "cnt");
+    HHDLOG("cnt[%d]", cnt);
     urlList1 = urlList;
     auto cnt2 = urlList.use_count();
-    hhdPrintValue(cnt2, "cnt2");
+    HHDLOG("cnt2[%d]", cnt2);
     func2(urlList);
     auto cnt3 = urlList.use_count();
-    hhdPrintValue(cnt3, "cnt3");
+    HHDLOG("cnt3[%d]", cnt3);
     auto d = 0;
     urlList1.reset();
 }
-
 
 TEST(test, test)
 {
@@ -207,10 +89,8 @@ TEST(test, test)
     urlList->push_back("world");
     func1(urlList);
     auto cnt = urlList.use_count();
-    hhdPrintValue(cnt, "test cnt");
+    HHDLOG("cnt[%d]", cnt);
 }
-
-
 
 TEST(epoch_time, epoch_time)
 {
@@ -221,8 +101,6 @@ TEST(epoch_time, epoch_time)
     auto epoch2 = now2.time_since_epoch().count();
     auto diff = epoch2 - epoch;
 }
-
-
 
 TEST(p12, chrono_now)
 {
@@ -236,14 +114,12 @@ TEST(p12, chrono_now)
 
     auto now2 = std::chrono::system_clock::now();
     auto diff = now2 - now;
-    std::cout << "diff : " << diff.count() << std::endl;
+    HHDLOG("diff.count()[%d]", diff.count());
 }
-
-
 
 TEST(p16, minmax_pair)
 {
-    auto NUM_ARR = { -2, 1, 0, 1, 2, 3, 4, 5 };
+    auto NUM_ARR = {-2, 1, 0, 1, 2, 3, 4, 5};
     auto min = std::min(NUM_ARR);
     EXPECT_TRUE(min == -2);
 
@@ -251,16 +127,13 @@ TEST(p16, minmax_pair)
     EXPECT_TRUE(minmax.first == -2);
     EXPECT_TRUE(minmax.second == 5);
 
-    auto minmax2 = std::minmax(NUM_ARR, [](int a, int b)
-    {
+    auto minmax2 = std::minmax(NUM_ARR, [](int a, int b) {
         auto res = std::abs(a) > std::abs(b);
         return res;
     });
     EXPECT_TRUE(minmax2.first == 5);
     EXPECT_TRUE(minmax2.second == 0);
 }
-
-
 
 TEST(p17, copy_move)
 {
@@ -271,16 +144,14 @@ TEST(p17, copy_move)
     vec = bigVec;
     auto now1 = std::chrono::system_clock::now();
     auto diff0 = now1 - now0;
-    std::cout << "diff0 : " << diff0.count() << std::endl;
+    HHDLOG("diff0.count()[%d]", diff0.count());
 
     auto now2 = std::chrono::system_clock::now();
     vec = std::move(bigVec);
     auto now3 = std::chrono::system_clock::now();
     auto diff1 = now3 - now2;
-    std::cout << "diff1 : " << diff1.count() << std::endl;
+    HHDLOG("diff1.count()[%d]", diff1.count());
 }
-
-
 
 TEST(p22, make_pair_first_second)
 {
@@ -288,8 +159,6 @@ TEST(p22, make_pair_first_second)
     EXPECT_TRUE(pair.first == "pi");
     EXPECT_TRUE(pair.second == 3.14);
 }
-
-
 
 TEST(p23, make_tuple_get)
 {
@@ -301,20 +170,18 @@ TEST(p23, make_tuple_get)
     EXPECT_TRUE(std::get<4>(tuple) == "world");
 }
 
-
-
 class MyClass
 {
-public:
+  public:
     MyClass(std::string id)
     {
         _id = id;
-        std::cout << __FUNCTION__ << " _id : " << _id << std::endl;
+        HHDLOG("_id[%d]", _id);
     }
 
     virtual ~MyClass()
     {
-        std::cout << __FUNCTION__ << " _id : " << _id << std::endl;
+        HHDLOG("_id[%d]", _id);
     }
 
     std::string _id;
@@ -336,12 +203,10 @@ TEST(p32, make_shared_shared_ptr)
     obj.reset();
     EXPECT_TRUE(obj.use_count() == 0);
 
-    MyClass* pRawObj = new MyClass("world");
+    MyClass *pRawObj = new MyClass("world");
     obj.reset(pRawObj);
     EXPECT_TRUE(obj.use_count() == 1);
 }
-
-
 
 TEST(p42, chrono_duration)
 {
@@ -360,54 +225,34 @@ TEST(p42, chrono_duration)
     std::cout << "spanHour : " << spanHour << std::endl;
 }
 
-
-
-
 TEST(p48, vector)
 {
-    auto ARR = { 1, 2, 3, 4, 5 };
+    auto ARR = {1, 2, 3, 4, 5};
     std::vector<int> v = ARR;
-    hhdPrintVector(v, "v");
-
     auto v2 = v;
-    hhdPrintVector(v2, "v2");
-
     std::vector<int> v3(v.begin(), v.end());
-    hhdPrintVector(v3, "v3");
-
-    std::vector<int> v4 = { 1, 2, 3, 4, 5 };
-    hhdPrintVector(v4, "v4");
+    std::vector<int> v4 = {1, 2, 3, 4, 5};
 }
-
-
 
 TEST(p49, map_unordered_map)
 {
-    std::map<std::string, int> m = { {"hello", 5}, {"world", 5}, {"hhd", 3} };
-    hhdPrintMap<std::string, int>(m, "m");
-    std::unordered_map<std::string, int> m2 = { { "hello", 5 },{ "world", 5 },{ "hhd", 3 } };
-    hhdPrintUnorderdMap<std::string, int>(m2, "m2");
+    std::map<std::string, int> m = {{"hello", 5}, {"world", 5}, {"hhd", 3}};
+    std::unordered_map<std::string, int> m2 = {{"hello", 5}, {"world", 5}, {"hhd", 3}};
     std::unordered_map<std::string, int> m3(m.begin(), m.end());
-    hhdPrintUnorderdMap<std::string, int>(m3, "m3");
     auto a1 = m3["hello"];
     auto a2 = m3["hellohello"];
     auto a3 = m3.find("hellohello");
     auto mhello = m.find("hello");
     auto myhhd = m.find("myhhd");
     m3.erase("hellohello");
-    const char* str = "12345";
+    const char *str = "12345";
     std::string log(str, str + 3);
 }
 
-
-
 TEST(p57, array)
 {
-    std::array<int, 10> arr{ 1, 2, 3, 4, 5 };
-    hhdPrintArray(arr, "arr");
+    std::array<int, 10> arr{1, 2, 3, 4, 5};
 }
-
-
 
 TEST(p82, stack)
 {
@@ -416,17 +261,15 @@ TEST(p82, stack)
     st.push(2);
     st.push(3);
 
-    hhdPrintValue(st.top(), "st.top()");
+    HHDLOG("st.top()[%d]", st.top());
     st.pop();
 
-    hhdPrintValue(st.top(), "st.top()");
+    HHDLOG("st.top()[%d]", st.top());
     st.pop();
 
-    hhdPrintValue(st.top(), "st.top()");
+    HHDLOG("st.top()[%d]", st.top());
     st.pop();
 }
-
-
 
 TEST(p82, queue)
 {
@@ -435,21 +278,19 @@ TEST(p82, queue)
     qqq.push(2);
     qqq.push(3);
 
-    hhdPrintValue(qqq.front(), "qqq.front()");
+    HHDLOG("qqq.front()[%d]", qqq.front());
     qqq.pop();
 
-    hhdPrintValue(qqq.front(), "qqq.front()");
+    HHDLOG("qqq.front()[%d]", qqq.front());
     qqq.pop();
 
-    hhdPrintValue(qqq.front(), "qqq.front()");
+    HHDLOG("qqq.front()[%d]", qqq.front());
     qqq.pop();
 }
 
-
-
 struct SquareFuncType
 {
-    void operator() (int& i)
+    void operator()(int &i)
     {
         i = i * i;
     }
@@ -457,190 +298,144 @@ struct SquareFuncType
 
 TEST(p99, func_type_for_each)
 {
-    std::vector<int> v{ 1, 2, 3, 4, 5 };
+    std::vector<int> v{1, 2, 3, 4, 5};
     std::for_each(v.begin(), v.end(), SquareFuncType());
-    hhdPrintVector(v, "v");
 }
-
-
 
 TEST(p100, lambda_func)
 {
-    std::vector<int> v{ 1, 2, 3, 4, 5 };
-    std::for_each(v.begin(), v.end(), [](int& i) { i = i * i; });
-    hhdPrintVector(v, "v");
+    std::vector<int> v{1, 2, 3, 4, 5};
+    std::for_each(v.begin(), v.end(), [](int &i) { i = i * i; });
 }
-
-
 
 TEST(p107, algorithm_count_count_if_any_of)
 {
     std::string str = "asdfghjklaqwertyazxcvbnFDSAREWQVCXZ";
-    hhdPrintValue(std::count(str.begin(), str.end(), 'a'), "count a");
-    hhdPrintValue(std::count_if(str.begin(), str.end(), [](char c) { auto res = std::isupper(c); return res; }), "count CAP");
-    hhdPrintValue(std::any_of(str.begin(), str.end(), [](char c) { auto res = std::isupper(c); return res; }), "any of CAP");
-    hhdPrintValue(std::any_of(str.begin(), str.end(), [](char c) { auto res = (c >= '0' && c <= '9'); return res; }), "any of NUM");
+    HHDLOG("count a[%d]", std::count(str.begin(), str.end(), 'a'));
+    HHDLOG("count CAP[%d]", std::count_if(str.begin(), str.end(), [](char c) { auto res = std::isupper(c); return res; }));
+    HHDLOG("any of CAP[%d]", std::any_of(str.begin(), str.end(), [](char c) { auto res = std::isupper(c); return res; }));
+    HHDLOG("any of NUM[%d]", std::any_of(str.begin(), str.end(), [](char c) { auto res = (c >= '0' && c <= '9'); return res; }));
 }
-
-
 
 TEST(p111, algorithm_search)
 {
-    std::vector<int> v{ 3, 4, 5, 6, 7, 8, 9 };
-    std::vector<int> v2{ 5, 6, 7 };
-    std::vector<int> v3{ 5, 6, 7, 9 };
+    std::vector<int> v{3, 4, 5, 6, 7, 8, 9};
+    std::vector<int> v2{5, 6, 7};
+    std::vector<int> v3{5, 6, 7, 9};
     auto res = std::search(v.begin(), v.end(), v2.begin(), v2.end());
     if (res != v.end())
     {
         auto dist = res - v.begin();
-        hhdPrintValue(dist, "dist");
+        HHDLOG("dist[%d]", dist);
     }
 
     auto res2 = std::search(v.begin(), v.end(), v3.begin(), v3.end());
     if (res2 != v.end())
     {
         auto dist2 = res2 - v2.begin();
-        hhdPrintValue(dist2, "dist2");
+        HHDLOG("dist2[%d]", dist2);
     }
 }
 
-
-
-
 TEST(p111, algorithm_copy_n_if)
 {
-    std::vector<int> v{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
     std::vector<int> v2(10);
     std::copy(v.begin(), v.end(), v2.begin());
-    hhdPrintVector(v2, "v2");
 
     std::vector<int> v3(10);
     std::copy_n(v.begin(), 3, v3.begin());
-    hhdPrintVector(v3, "v3");
 
     std::vector<int> v4(10);
     std::copy_if(v.begin(), v.end(), v4.begin(), [](int i) { auto res = (i % 2 == 0); return res; });
-    hhdPrintVector(v4, "v4");
 }
-
-
 
 TEST(p112, algorithm_replace_if)
 {
-    std::vector<int> v{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
     std::vector<int> v2(v);
     std::replace(v2.begin(), v2.end(), 5, 500);
-    hhdPrintVector(v2, "v2");
 
     std::vector<int> v3(v);
-    std::replace_if(v3.begin(), v3.end(), [](int i) {return (i % 2 == 0); }, 999);
-    hhdPrintVector(v3, "v3");
+    std::replace_if(v3.begin(), v3.end(), [](int i) { return (i % 2 == 0); }, 999);
 }
-
-
 
 TEST(p113, algorithm_remove_if)
 {
-    std::vector<int> v{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
     std::vector<int> v2(v);
     std::remove(v2.begin(), v2.end(), 5);
-    hhdPrintVector(v2, "v2");
 
     std::vector<int> v3(v);
-    std::remove_if(v3.begin(), v3.end(), [](int i) {return (i % 2 == 0); });
-    hhdPrintVector(v3, "v3");
+    std::remove_if(v3.begin(), v3.end(), [](int i) { return (i % 2 == 0); });
 }
-
-
-
 
 TEST(p119, algorithm_reverse)
 {
-    std::vector<int> v{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
     std::vector<int> v2(v);
     std::reverse(v2.begin(), v2.end());
-    hhdPrintVector(v2, "v2");
 }
-
-
-
 
 TEST(p120, algorithm_rotate)
 {
-    std::vector<int> v{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
     std::vector<int> v2(v);
     std::rotate(v2.begin(), v2.begin() + 5, v2.end());
-    hhdPrintVector(v2, "5 step rotate");
 }
-
-
 
 TEST(p121, algorithm_random_shuffle)
 {
-    std::vector<int> v{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
     std::vector<int> v2(v);
     std::random_shuffle(v2.begin(), v2.end());
-    hhdPrintVector(v2, "random_shuffle");
 }
-
-
 
 TEST(p126, algorithm_sort)
 {
-    std::vector<int> v{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3 };
+    std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3};
 
     std::vector<int> v2(v);
-    hhdPrintValue(std::is_sorted(v2.begin(), v2.end()), "v2 is sort");
+    HHDLOG("v2 is sort[%d]", std::is_sorted(v2.begin(), v2.end()));
     std::sort(v2.begin(), v2.end());
-    hhdPrintVector(v2, "sort");
-    hhdPrintValue(std::is_sorted(v2.begin(), v2.end()), "v2 is sort");
+    HHDLOG("v2 is sort[%d]", std::is_sorted(v2.begin(), v2.end()));
 }
-
-
 
 TEST(p129, algorithm_set)
 {
-    std::vector<int> v{ 0, 1, 2, 3, 4, 5 };
-    std::vector<int> v2{ 3, 4, 5, 6, 7, 8 };
+    std::vector<int> v{0, 1, 2, 3, 4, 5};
+    std::vector<int> v2{3, 4, 5, 6, 7, 8};
 
     std::vector<int> vMerge;
     std::merge(v.begin(), v.end(), v2.begin(), v2.end(), std::back_inserter(vMerge));
-    hhdPrintVector(vMerge, "merge");
 
     std::vector<int> vDiff;
     std::set_difference(v.begin(), v.end(), v2.begin(), v2.end(), std::back_inserter(vDiff));
-    hhdPrintVector(vDiff, "set_difference");
 
     std::vector<int> vIntersection;
     std::set_intersection(v.begin(), v.end(), v2.begin(), v2.end(), std::back_inserter(vIntersection));
-    hhdPrintVector(vIntersection, "set_intersection");
 
     std::vector<int> vUnion;
     std::set_union(v.begin(), v.end(), v2.begin(), v2.end(), std::back_inserter(vUnion));
-    hhdPrintVector(vUnion, "set_union");
 }
-
-
 
 TEST(p154, str_find_rfind_first_of_last_of)
 {
     std::string str = "hellocppworldcppbravo";
-    hhdPrintValue(str.find("cpp"), "str.find(cpp)");
-    hhdPrintValue(str.find("csharp"), "str.find(csharp)");
-    hhdPrintValue(str.find("csharp") == std::string::npos, "str.find(csharp) == std::string::npos");
-    hhdPrintValue(str.rfind("cpp"), "str.rfind(cpp)");
-    hhdPrintValue(str.find_first_of("cpp", 0), "str.find_first_of(cpp, 0)");
-    hhdPrintValue(str.find_first_of("cpp", 10), "str.find_first_of(cpp, 10)");
+
+    HHDLOG("str.find(cpp)[%d]", str.find("cpp"));
+    HHDLOG("str.find(csharp)[%d]", str.find("csharp"));
+    HHDLOG("str.find(csharp) == std::string::npos[%d]", str.find("csharp") == std::string::npos);
+    HHDLOG("str.rfind(cpp)[%d]", str.rfind("cpp"));
+    HHDLOG("str.find_first_of(cpp, 0)[%d]", str.find_first_of("cpp", 0));
+    HHDLOG("str.find_first_of(cpp, 10)[%d]", str.find_first_of("cpp", 10));
 }
-
-
-
 
 TEST(p156, str_replace)
 {
@@ -661,26 +456,22 @@ TEST(p156, str_replace)
         i += to.length();
     }
 
-    hhdPrintValue(res, "res");
+    HHDLOG("res[%d]", res);
     EXPECT_TRUE(res.compare("hicpphiworldcppbravo") == 0);
     EXPECT_TRUE(res == "hicpphiworldcppbravo");
 }
 
-
-
 TEST(p158, to_string_stoi_stod)
 {
     auto str = std::to_string(1234);
-    hhdPrintValue(str, "str");
+    HHDLOG("str[%s]", str.c_str());
     auto str2 = std::to_string(1234.5678);
-    hhdPrintValue(str2, "str2");
+    HHDLOG("str2[%s]", str2.c_str());
     auto num = std::stoi("5678");
-    hhdPrintValue(num, "num");
+    HHDLOG("num[%d]", num);
     auto num2 = std::stod("-12.34");
-    hhdPrintValue(num2, "num2");
+    HHDLOG("num2[%d]", num2);
 }
-
-
 
 TEST(p161, regex)
 {
@@ -690,10 +481,8 @@ TEST(p161, regex)
     std::regex rgx(regStr);
     std::smatch res;
     std::regex_search(str, res, rgx);
-    hhdPrintValue(res[0], "res[0]");
+    HHDLOG("res.str().c_str()[%s]", res.str().c_str());
 }
-
-
 
 TEST(p182, getline)
 {
@@ -702,8 +491,6 @@ TEST(p182, getline)
     std::getline(std::cin, line);
     std::cout << "this line ... " << line << std::endl;
 }
-
-
 
 TEST(p183, simple_format)
 {
@@ -714,7 +501,6 @@ TEST(p183, simple_format)
     std::cout << std::dec;
     std::cout << num << std::endl;
 }
-
 
 TEST(p185, complex_format)
 {
@@ -740,22 +526,6 @@ TEST(p185, complex_format)
     std::cout << "std::setprecision(10) : " << num << std::endl;
 }
 
-
-
-
 TEST(p186, xxx)
 {
-
 }
-
-
-
-
-
-
-
-
-
-
-
-

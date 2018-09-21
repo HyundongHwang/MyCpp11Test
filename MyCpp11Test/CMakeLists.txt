@@ -20,24 +20,13 @@ MESSAGE("GOOGLETEST LIB PATH : ${CMAKE_SOURCE_DIR}/thirdparty/gtest/bin/Linux/li
 
 
 
-# ################################################################################
-# # stellite
-# INCLUDE_DIRECTORIES( stellite/include )
-# ADD_LIBRARY( stellite SHARED IMPORTED )
-# SET_TARGET_PROPERTIES( stellite PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/stellite/bin/libstellite_http_client.so )
-# LINK_DIRECTORIES( ${CMAKE_SOURCE_DIR}/stellite/bin/ )
-# MESSAGE("STELLITE LIB PATH : ${CMAKE_SOURCE_DIR}/stellite/bin/libstellite_http_client.so")
-
-
-
 ################################################################################
 # main build
 ADD_EXECUTABLE( MyCpp11Test 
                 test_sample.cpp
                 testf_sample.cpp
                 main.cpp
-                temp.cpp
-                HhdLog.cpp)
+                temp.cpp)
 
 TARGET_LINK_LIBRARIES(  MyCpp11Test 
                         gtest
@@ -45,12 +34,11 @@ TARGET_LINK_LIBRARIES(  MyCpp11Test
 
 
 
-################################################################################
 # install dependencies
 # ADD_CUSTOM_COMMAND (
-#     TARGET MyStelliteLinuxTest
+#     TARGET MyCpp11Test
 #     COMMENT "copy so files ..."
-#     COMMAND sudo cp ${CMAKE_SOURCE_DIR}/stellite/bin/libstellite_http_client.so /usr/local/lib
+#     COMMAND sudo cp ${CMAKE_SOURCE_DIR}/xxx/bin/xxx.so /usr/local/lib
 #     COMMENT "ldconfig ..."
 #     COMMAND sudo ldconfig
 # )

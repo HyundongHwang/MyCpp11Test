@@ -86,4 +86,4 @@
 
 #include "gtest/gtest.h"
 #include "hhd_util.h"
-#include "HhdLog.h"
+#include "hhdlog.h"
