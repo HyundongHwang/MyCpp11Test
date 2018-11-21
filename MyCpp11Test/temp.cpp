@@ -1,5 +1,15 @@
 #include "stdafx.h"
 
+TEST(temp, temp)
+{
+
+    for (size_t i = 0; i < 100; i++)
+    {
+        long uTsEpochMs = std::chrono::system_clock::now().time_since_epoch() / std::chrono::milliseconds(1);
+        HHDLOG("uTsEpochMs[%lld]", uTsEpochMs);
+    }
+}
+
 TEST(print_cur_time, print_cur_time)
 {
     std::time_t t = std::time(nullptr);
@@ -96,6 +106,9 @@ TEST(epoch_time, epoch_time)
 {
     auto now = std::chrono::system_clock::now();
     auto epoch = now.time_since_epoch().count();
+
+    auto milliseconds_since_epoch = now.time_since_epoch() / std::chrono::milliseconds(1);
+
     std::this_thread::sleep_for(std::chrono::seconds(3));
     auto now2 = std::chrono::system_clock::now();
     auto epoch2 = now2.time_since_epoch().count();
